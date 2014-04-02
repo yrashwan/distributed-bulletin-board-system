@@ -5,51 +5,63 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.ExportException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Arrays;
 
 import remote.RemoteInterface;
 
 public class RmiServer {
 
 	// in order not to be garbage collected, should be strong reference
-	public static final RemoteInterface obj_strong_ref;
+	public static RemoteInterface obj_strong_ref;
 
-	static {
-		RemoteInterface tmp;
+	private static Registry registry;
+	private final String objectName;
+	
+	// static {
+	// RemoteInterface tmp;
+	// try {
+	// // TODO let it use parameters given!
+	// tmp = new RemoteNewsObject(1099,18);
+	// } catch (RemoteException e) {
+	// tmp = null;
+	// e.printStackTrace();
+	// }
+	// obj_strong_ref = tmp;
+	// }
+
+	public RmiServer(String serverAddress, String objectName, int portNumber,
+			int numberOfAccesses) throws RemoteException {
+
+		this.objectName = objectName;
+		obj_strong_ref = new RemoteNewsObject(portNumber,
+				numberOfAccesses);
+
+		// option#1 ============ using getRegistry
+		LocateRegistry.createRegistry(portNumber);
+		registry = LocateRegistry.getRegistry(serverAddress, portNumber);
+		RemoteInterface stub;
 		try {
-			tmp = new RemoteNewsObject(1099);
-		} catch (RemoteException e) {
-			tmp = null;
-			e.printStackTrace();
+			stub = (RemoteInterface) UnicastRemoteObject.exportObject(
+					obj_strong_ref, portNumber);
+		} catch (ExportException e) {
+			stub = (RemoteInterface) UnicastRemoteObject.toStub(obj_strong_ref);
 		}
-		obj_strong_ref = tmp;
+		registry.rebind(objectName, stub);
+		System.out.println("*** registry " + Arrays.toString(registry.list()));
+
+		// option#2 ============ getRegistry only
+		// // #using createRegistry & rebind directly the object
+		// final Registry registry = LocateRegistry.createRegistry(portNumber);
+		// registry.rebind(objectName, obj_strong_ref);
+		System.out.println("Server bound");
 	}
 
-	public RmiServer(String serverAddress, String objectName,
-			int portNumber, int numberOfAccesses) throws RemoteException {
-		try {
-			// #using getRegistry
-			// final Registry registry =
-			// LocateRegistry.getRegistry(serverAddress,
-			// portNumber);
-			// RemoteInterface stub = (RemoteInterface) UnicastRemoteObject
-			// .exportObject(obj_strong_ref, 1099);
-			//
-			
-			// #using createRegistry & rebind directly the object
-			final Registry registry = LocateRegistry.createRegistry(portNumber);
-			// registry.rebind(objectName, stub);
-			registry.rebind(objectName, obj_strong_ref);
-
-			// Naming.rebind(objectName, obj_strong_ref);
-			System.out.println("Server bound");
-		} catch (Exception e) {
-			System.err.println("Server exception:");
-			e.printStackTrace();
-		}
-	}
-
-	public void endServer() throws RemoteException, MalformedURLException,
+	public void end() throws RemoteException, MalformedURLException,
 			NotBoundException {
-		// TODO
+		System.out.println(Arrays.toString(registry.list()));
+		registry.unbind(objectName);
+		System.out.println("server ended");
 	}
 }

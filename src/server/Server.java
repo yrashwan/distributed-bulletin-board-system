@@ -125,7 +125,7 @@ public final class Server implements Runnable {
 
 						try {
 							System.out.println("Reading...");
-							Thread.sleep(new Random().nextInt(10000));
+							Thread.sleep(new Random().nextInt(4000));
 						} catch (InterruptedException e1) {
 						}
 
@@ -151,7 +151,7 @@ public final class Server implements Runnable {
 
 						try {
 							System.out.println("writing...");
-							Thread.sleep(new Random().nextInt(10000));
+							Thread.sleep(new Random().nextInt(4000));
 						} catch (InterruptedException e1) {
 						}
 

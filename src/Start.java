@@ -43,12 +43,12 @@ public final class Start {
 				clientAddress, serverAddress, Integer.toString(portNumber),
 				Integer.toString(numberOfAcesses), objectName);
 		Process process = builder.start();
-		process.waitFor();
-		Scanner in = new Scanner(process.getInputStream());
-		while (in.hasNext())
-			System.out.println("-- " + in.nextLine());
-		in.close();
-		System.out.println(" process done with exit Value " + process.exitValue());
+//		process.waitFor();
+//		Scanner in = new Scanner(process.getInputStream());
+//		while (in.hasNext())
+//			System.out.println("-- " + in.nextLine());
+//		in.close();
+//		System.out.println(" process done with exit Value " + process.exitValue());
 	}
 
 

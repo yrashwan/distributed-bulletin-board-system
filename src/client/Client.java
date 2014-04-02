@@ -1,6 +1,8 @@
 package client;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -48,11 +50,11 @@ public final class Client {
 	public void run() throws InterruptedException, UnknownHostException,
 			IOException {
 
-		// PrintWriter logWriter = new PrintWriter(new File("log" + id +
-		// ".log"));
-		// logWriter.write("Client Type: " + type + "\n");
-		// logWriter.write("Client Name: " + id + "\n");
-		// logWriter.write("rSeq\tsSeq\toVal\n");
+		 PrintWriter logWriter = new PrintWriter(new File("log" + id +
+		 ".log"));
+		 logWriter.write("Client Type: " + type + "\n");
+		 logWriter.write("Client Name: " + id + "\n");
+		 logWriter.write("rSeq\tsSeq\toVal\n");
 
 		int accessCounter = accessNumber;
 		while (accessCounter-- > 0) {
@@ -60,28 +62,27 @@ public final class Client {
 					+ serverAddress + " " + serverPortNumber);
 
 			final int proccessedNews;
-			// TODO get string 'response' from the server just like the version#1
+
+			final String response;
 			if (type.equalsIgnoreCase(ServerClientUtils.READER)) {
 				// reader
-				proccessedNews = remoteObject.getNews(id);
+				response = remoteObject.getNews(id);
+				proccessedNews = Integer.valueOf(response.split(" ")[1]);
 				System.out.println("Client " + id + " read " + proccessedNews);
 			} else {
 				// writer
 				proccessedNews = new Random().nextInt(100);
-				remoteObject.setNews(id, proccessedNews);
+				response = remoteObject.setNews(id, proccessedNews);
 				System.out.println("Client " + id + " write " + proccessedNews);
 			}
-
-			// System.out.println("Client: try to read");
-			// String readLine = new BufferedReader(new InputStreamReader(
-			// clientSocket.getInputStream())).readLine();
-			// logWriter.write(readLine.replaceAll(" ", "\t\t") + "\n");
+			System.out.println("Client " + id + " recieve response " + response);
+			 logWriter.write(response.replaceAll(" ", "\t\t") + "\n");
 
 			if (accessCounter != 0) {
 				Thread.sleep(new Random().nextInt(SLEEP_TIME));
 			}
 		}
-		// logWriter.close();
+		 logWriter.close();
 	}
 
 	public static void main(String[] args) {
@@ -93,7 +94,7 @@ public final class Client {
 					Integer.valueOf(args[5]), args[6]);
 			client.run();
 		} catch (Exception e) {
-			System.out.print("WTF "+ e.getMessage());
+			System.out.print("Client Exception: "+ e.getMessage());
 			throw new RuntimeException();
 		}
 	}
