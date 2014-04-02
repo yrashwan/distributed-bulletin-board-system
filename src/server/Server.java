@@ -1,3 +1,4 @@
+package server;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -9,18 +10,22 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import utils.ServerClientUtils;
+
 public final class Server implements Runnable {
 
+	@SuppressWarnings("unused")
 	private final String address;
 	private final ServerSocket socket;
 	private final Lock readLock;
 	private final Lock writeLock;
 	private final int maxReads;
 	private final ReentrantReadWriteLock readWriteLock;
-	private SynchornizedCounter sequenceNumber;
+	private AtomicInteger sequenceNumber;
 
 	private int news = -1;
 
@@ -28,20 +33,21 @@ public final class Server implements Runnable {
 	private Vector<String> readerLog = new Vector<String>();
 	private Vector<String> writerLog = new Vector<String>();
 
-	public Server(String address, int portNumber, int maxReads)
-			throws IOException {
+	public Server(String address, int portNumber, int maxReads) throws IOException {
 		this.address = address;
 		this.maxReads = maxReads;
 		this.socket = new ServerSocket(portNumber);
-		this.readWriteLock = new ReentrantReadWriteLock();
+		this.readWriteLock = new ReentrantReadWriteLock(true);
 		this.readLock = readWriteLock.readLock();
 		this.writeLock = readWriteLock.writeLock();
 
-		this.sequenceNumber = new SynchornizedCounter(1);
+		this.sequenceNumber = new AtomicInteger(1);
 	}
 
 	@Override
 	public void run() {
+		System.out.println("\n... Start Server ...\n");
+		
 		ArrayList<Thread> threads = new ArrayList<Thread>();
 
 		readerLog.add("Readers");
@@ -59,8 +65,7 @@ public final class Server implements Runnable {
 				// + requestNumber);
 				Socket connectionSocket = socket.accept();
 
-				Thread thread = new Thread(new ClientHandler(connectionSocket,
-						requestNumber));
+				Thread thread = new Thread(new ClientHandler(connectionSocket, requestNumber));
 				thread.start();
 				threads.add(thread);
 				++requestNumber;
@@ -84,6 +89,8 @@ public final class Server implements Runnable {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		
+		System.out.println("... Server Ends ...");
 	}
 
 	private final class ClientHandler implements Runnable {
@@ -100,14 +107,9 @@ public final class Server implements Runnable {
 		public void run() {
 			System.out.println(requestNumber + " ... started");
 			try {
-				// System.out.println("Server: reading line");
-				final String readLine = new BufferedReader(
-						new InputStreamReader(connectionSocket.getInputStream()))
+				final String readLine = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()))
 						.readLine();
-				// System.out.println("Server: successfully read :" + readLine);
-
-				DataOutputStream outToClient = new DataOutputStream(
-						connectionSocket.getOutputStream());
+				DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
 				String ln[] = readLine.split(" ");
 				System.out.println(requestNumber + " " + readLine);
 				String type = ln[0];
@@ -116,25 +118,27 @@ public final class Server implements Runnable {
 				if (type.equalsIgnoreCase(ServerClientUtils.READER)) {
 					// reader
 					// write back to client
-					// System.out.println("Server: write back to client");
 					int tmp;
 					try {
 						readLock.lock();
-
 						tmp = news;
+
+						try {
+							System.out.println("Reading...");
+							Thread.sleep(new Random().nextInt(10000));
+						} catch (InterruptedException e1) {
+						}
+
 						int current;
 						synchronized (sequenceNumber) {
-							current = sequenceNumber.get();
-							sequenceNumber.increment();
+							current = sequenceNumber.getAndIncrement();
+
 							// write to log
-							readerLog.add(current + "\t\t" + tmp + "\t\t"
-									+ clientID + "\t\t"
+							readerLog.add(current + "\t\t" + tmp + "\t\t" + clientID + "\t\t"
 									+ readWriteLock.getReadLockCount());
-							System.out.println("waiting for read are "
-									+ readWriteLock.getReadLockCount());
+							System.out.println("waiting for read are " + readWriteLock.getReadLockCount());
 						}
-						outToClient.writeBytes(requestNumber + " " + current
-								+ " " + String.valueOf(tmp) + "\n");
+						outToClient.writeBytes(requestNumber + " " + current + " " + String.valueOf(tmp) + "\n");
 					} finally {
 						readLock.unlock();
 					}
@@ -152,15 +156,10 @@ public final class Server implements Runnable {
 						}
 
 						// write back to client
-						// System.out.println("Server: write back to client");
-						int current;
-						current = sequenceNumber.get();
-						sequenceNumber.increment();
+						int current = sequenceNumber.getAndIncrement();
 						// write to log
-						outToClient.writeBytes(requestNumber + " " + current
-								+ "\n");
-						writerLog.add(current + "\t\t" + tmp + "\t\t"
-								+ clientID);
+						outToClient.writeBytes(requestNumber + " " + current + "\n");
+						writerLog.add(current + "\t\t" + tmp + "\t\t" + clientID);
 					} finally {
 						writeLock.unlock();
 					}

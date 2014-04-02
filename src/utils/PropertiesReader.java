@@ -1,3 +1,4 @@
+package utils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
@@ -10,6 +11,9 @@ public final class PropertiesReader {
 
 	private static final String SERVER_ADDRESS = "RW.server";
 	private static final String SERVER_PORT = "RW.server.port";
+
+	private static final String RMI_PORT = "RW.rmiregistry.port";
+	
 	private static final String NUMBER_OF_ACCESSES = "RW.numberOfAccesses";
 
 	private static final String NUMBER_OF_READERS = "RW.numberOfReaders";
@@ -41,7 +45,11 @@ public final class PropertiesReader {
 	public int getServerPortNum() {
 		return Integer.valueOf(properties.get(SERVER_PORT));
 	}
-
+	
+	public int getRmiRegisteryPortNum(){
+		return Integer.valueOf(properties.get(RMI_PORT));
+	}
+	
 	public int getAccessNum() {
 		return Integer.valueOf(properties.get(NUMBER_OF_ACCESSES));
 	}

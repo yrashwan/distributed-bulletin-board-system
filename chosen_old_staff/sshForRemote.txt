@@ -1,0 +1,18 @@
+	public static void startNewClient(Class<?> klass, int clientID, String clientType, String clientAddress,
+			String serverAddress, int portNumber, int numberOfAcesses, String objectName) throws IOException, InterruptedException {
+		String ssh = "ssh " + clientAddress;
+
+//		String path = System.getProperty("user.dir");
+		
+		String path = "~/Desktop/Distributed_Assignment_1/bin/";
+		String cd = "cd " + path;
+
+		String args = Integer.toString(clientID) + " " + clientType + " " + clientAddress + " " + serverAddress + " "
+				+ Integer.toString(portNumber) + " " + Integer.toString(numberOfAcesses) + " " + objectName;
+		String java = "java Client " + args;
+
+		String command = ssh + " " + cd + ";" + java;
+		
+		System.out.println("****\t" + command);
+		Runtime.getRuntime().exec(command);
+	}

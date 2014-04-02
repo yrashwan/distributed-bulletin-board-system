@@ -1,0 +1,6 @@
+grant codeBase "file:\E:\workspaceJava\Distributed_BulletinBoardSystem\src\" 
+{
+ 
+    permission java.security.AllPermission;
+};
+
